@@ -1,0 +1,20 @@
+# DVC manages its own .gitignore entries inside RawData/, data/, results/
+# (per-file, added automatically by `dvc add`) — do not blanket-ignore those
+# directories here, or DVC's pointer (.dvc) files would be ignored too.
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
