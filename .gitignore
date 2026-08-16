@@ -1,6 +1,17 @@
-# DVC manages its own .gitignore entries inside RawData/, data/, results/
-# (per-file, added automatically by `dvc add`) — do not blanket-ignore those
-# directories here, or DVC's pointer (.dvc) files would be ignored too.
+# DVC manages its own .gitignore entries inside RawData/, data/, results/,
+# reference/, MaxQuantSearch/ (per-file, added automatically by `dvc add`) —
+# do not blanket-ignore those directories here, or DVC's pointer (.dvc)
+# files would be ignored too.
+
+# Installed third-party tools (MaxQuant, ThermoRawFileParser) — large binaries,
+# redownloaded via documented steps rather than version-controlled.
+/tools/
+
+# MaxQuant run logs and generated output (DVC-tracked once a run completes,
+# or just regenerable) — but keep mqpar.xml itself, it's the versioned config.
+MaxQuantSearch/*/run.log
+MaxQuantSearch/*/combined/
+MaxQuantSearch/*/txt/
 
 # Python
 __pycache__/
@@ -18,3 +29,4 @@ venv/
 .DS_Store
 Thumbs.db
 .vscode/
+/reference

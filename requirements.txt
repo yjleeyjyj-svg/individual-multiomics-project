@@ -6,4 +6,5 @@ matplotlib
 seaborn
 requests
 pyteomics
+openpyxl
 "dvc[gs]"
