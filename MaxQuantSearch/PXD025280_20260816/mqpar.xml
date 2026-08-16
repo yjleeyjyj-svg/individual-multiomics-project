@@ -142,7 +142,7 @@
    <name>CommandlineSession</name>
    <maxQuantVersion>2.8.1.0</maxQuantVersion>
    <pluginFolder></pluginFolder>
-   <numThreads>8</numThreads>
+   <numThreads>4</numThreads>
    <emailAddress></emailAddress>
    <smtpHost></smtpHost>
    <emailFromAddress></emailFromAddress>

@@ -1,3 +1,14 @@
 # Add patterns of files dvc should ignore, which could improve
 # the performance. Learn more at
 # https://dvc.org/doc/user-guide/dvcignore
+
+# MaxQuant writes its working scratch directly next to the raw files
+# regardless of customTxtFolder in mqpar.xml: a shared "combined/" folder,
+# a per-raw-file working directory (same basename as the .raw file, no
+# extension), a per-raw-file ".index" file, and its own copy of mqpar.xml.
+# None of that is raw acquisition data — keep it out of the DVC-tracked
+# RawData/ snapshot.
+RawData/**/combined/
+RawData/**/*.index
+RawData/**/mqpar.xml
+RawData/**/20[0-9][0-9][0-9][0-9][0-9][0-9]_JS_JL_[0-9][0-9]/
