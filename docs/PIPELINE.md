@@ -130,7 +130,58 @@ here. Built an equivalent open pipeline instead:
   *(Appendix C3)*
 - Two configuration bugs fixed before it ran cleanly: a `PATH` issue
   *(Appendix C1)* and a `contaminants.fasta` parsing failure *(Appendix C2)*.
-- **Status:** running in the background, `numThreads=4`.
+- **Status:** stopped intentionally once the GCE VM (§7) pulled ahead on the
+  same dataset — see §7. `RawData/PXD025280_20260816/` was cleaned back to
+  its original 21-file/16.47 GB state (MaxQuant's own scratch removed) and
+  reconfirmed against the DVC/GCS remote before stopping, so there's nothing
+  local left to reconcile once the VM's results are pulled down.
+
+### MaxQuant's job sequence (54 steps)
+
+Whether run locally or on the VM, `MaxQuantCmd.exe mqpar.xml` walks through
+the same fixed sequence of named jobs (from `--dryrun`); `run.log` shows
+progress as one line per completed step. Grouped here by phase for
+readability — MaxQuant itself doesn't label the groups.
+
+**Setup & input validation (1–5):** Configuring · Assemble run info ·
+Finish run info · Testing fasta files · Testing raw files
+
+**Per-file feature extraction (6–10):** Feature detection · Deisotoping ·
+MS/MS preparation · Calculating peak properties · Combining apl files for
+first search
+
+**First-pass search & recalibration (11–15):** Preparing searches ·
+MS/MS first search · Read search results for recalibration · Mass
+recalibration · Calculating masses
+
+**Main search (16–18):** MS/MS preparation for main search · Combining apl
+files for main search · MS/MS main search
+
+**Identification & FDR filtering (19–27):** Preparing combined folder ·
+Correcting errors · Reading search engine results · Preparing reverse hits ·
+Finish search engine results · Filter identifications (MS/MS) · Calculating
+PEP · Copying identifications · Applying FDR
+
+**Second peptide search (28–34):** Assembling second peptide MS/MS ·
+Combining second peptide files · Second peptide search · Reading search
+engine results (SP) · Finish search engine results (SP) · Filtering
+identifications (SP) · Applying FDR (SP)
+
+**Quantification & cross-run matching (35–41):** Re-quantification ·
+Reporter quantification · Retention time alignment · Matching between runs
+1–4
+
+**Protein assembly (42–46):** Prepare protein assembly · Assembling
+proteins · Assembling unidentified peptides · Finish protein assembly ·
+Updating identifications
+
+**Label-free quantification (47–51):** Label-free preparation · Label-free
+normalization · Label-free quantification · Label-free collect · Estimating
+complexity
+
+**Writing output (52–54):** Prepare writing tables · Writing tables ·
+Finish writing tables — after this, `proteinGroups.txt` / `peptides.txt` /
+`evidence.txt` etc. appear in the configured output folder.
 
 ## 7. Cloud (GCE VM) MaxQuant search
 
@@ -184,8 +235,10 @@ API scope, and SSH access one at a time with the user):
   disconnection. *(Appendix D8)*
 - Same `contaminants.fasta` parsing fix needed again (the VM's mqpar.xml was
   generated fresh, not copied from local). *(Appendix D6)*
-- **Status:** running, `numThreads=14`, processing all 16 raw files' feature
-  detection in parallel.
+- **Status:** running, `numThreads=14`. Pulled ahead of the local run (§6)
+  well before the local one was stopped, and is now the sole run for
+  PXD025280 — monitored hourly (§8) until `MaxQuantSearch/output/` is
+  populated.
 
 ## 8. Monitoring
 
