@@ -178,3 +178,11 @@ for the process itself), grouped by area. Referenced from there by ID.
   avoid all-caps shell variable names here without first checking they
   don't collide with a bash built-in (`UID`, `PPID`, `GROUPS`, `BASH*`,
   `HOST*`, ... are all reserved/special).
+- **F3 — `httr2` install failed on this R version.** `install.packages('httr2')`
+  failed with `namespace 'rlang' 1.1.5 is being loaded, but >= 1.3.0 is
+  required` — CRAN's binary repository for this R version (4.3.2, Oct 2023)
+  caps at `rlang` 1.1.5, which is below what `httr2` needs; upgrading
+  `rlang` first didn't help since 1.1.5 is the newest binary actually
+  available for this R version. Used the older `httr` package instead
+  (looser dependencies, sufficient for a simple POST/GET against Reactome's
+  Analysis Service).

@@ -90,7 +90,8 @@ GCS bucket layout (`gs://individual-multiomics-project/`):
 - [x] Downstream export formats (R matrix, Reactome protein list) in `results/PXD025280_20260816/`
 - [x] Differential expression script (limma: empirical Bayes-moderated t-test + BH-FDR), matching the paper's actual significance test — mechanically tested with an arbitrary 8-vs-8 split, ready for real group labels
 - [x] VM deleted and local raw-data copy freed (~33 GB) once everything was confirmed safe in GCS; one orphaned test object cleaned out of the bucket
-- [ ] Volcano plot visualization (paused to build differential expression correctly first — resuming next)
+- [x] Volcano plot (`EnhancedVolcano`) from the differential expression output
+- [x] Reactome pathway analysis (REST API, ORA mode) on the real 1,477-protein identified list — 421/1,886 pathways at FDR < 0.05; expression-colored mode implemented and ready
 - [ ] Validation against the paper's reported summary statistics
 - [ ] Remaining PXD datasets (025305, 027056, 025329) processed on the VM
 - [ ] Sample/condition mapping filled in (pending, needs a source outside this project) — blocks real (non-arbitrary) differential expression and validation
