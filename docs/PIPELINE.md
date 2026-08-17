@@ -255,4 +255,89 @@ API scope, and SSH access one at a time with the user):
 `src/python/export_peptide_intensities.py` reads MaxQuant's `peptides.txt`
 and writes a peptide × sample intensity table to both CSV and XLSX, mirroring
 the paper's own checkpoint (Progenesis QI peptide intensities exported to
-Excel before downstream statistics). Not yet run against real output.
+Excel before downstream statistics). Run against the real VM output (§10):
+15,346 peptides × 16 samples.
+
+## 10. VM run completion and housekeeping
+
+The VM run (§7) finished all 54 MaxQuant job steps (see the job sequence
+above) while the local run was still stuck partway through — the local run
+was stopped intentionally rather than left competing for the same result.
+
+- **Pulling results down:** on the VM, `dvc add MaxQuantSearch/output` +
+  `dvc push` (using the VM's git-free DVC checkout from §7); the resulting
+  `output.dvc` pointer was relayed back through GCS (same pattern as
+  sending the two pointer files *to* the VM, reversed) and placed at
+  `MaxQuantSearch/PXD025280_20260816/output.dvc` locally, then `dvc pull`.
+  17 files, ~1.06 GB: `proteinGroups.txt` (2,623 protein groups),
+  `peptides.txt` (15,346 peptides), `evidence.txt`, `msms.txt`, and the
+  rest of MaxQuant's standard output.
+- **Freed local disk (~33 GB):** with `RawData/PXD025280_20260816` fully
+  confirmed in sync with the GCS remote (`dvc status -c`), both the working
+  copy and the corresponding local DVC cache objects were removed — the
+  `.dvc` pointer stays, so `dvc pull` restores it later if needed. (DVC has
+  no single built-in "evict but keep tracked" command; the cache objects
+  were identified and removed directly by reading the tracked directory's
+  `.dir` manifest for the exact hash list, rather than deleting the whole
+  cache indiscriminately.) *(Appendix E3)*
+- **VM deleted** (not just stopped) — full delete rather than
+  stop-and-keep-the-disk, consistent with the cost practice in §7, since
+  MaxQuant's installer is kept in GCS specifically to make re-setup on a
+  fresh VM fast (see "Deleted vs. stopped" trade-off, §7).
+- **GCS orphan check:** compared every object actually in the bucket
+  against every object referenced by the three current `.dvc` pointers
+  (`RawData`, `reference`, `output`) by walking each `.dir` manifest. Found
+  exactly one unreferenced object (41 bytes) — a leftover from the original
+  DVC↔GCS connectivity test done in §1, before any real data existed.
+  Removed it; everything else in the bucket was confirmed to be exactly
+  what the pointers expect, nothing missing.
+
+## 11. Downstream export formats
+
+`src/python/export_for_downstream.py` reads `proteinGroups.txt` and writes
+two formats into `results/PXD025280_20260816/`, applying this project's
+quantification filter (exclude decoys and potential contaminants, require
+≥3 unique peptides — the paper's own threshold, see §5): 2,623 protein
+groups → 1,477 after filtering.
+
+- **`protein_lfq_matrix.csv`** — protein × sample LFQ intensity matrix
+  (`Protein_ID`, `Gene_name` + one column per sample), the standard wide
+  format expected as input by R packages (limma, DEP, MSstats, ...).
+- **`reactome_protein_list.txt`** — plain UniProt accession list (one per
+  line), for Reactome's Pathway Analysis "Analyse Data" tool
+  (reactome.org/PathwayBrowser), matching the pathway analysis approach the
+  paper used (§5).
+
+Column/identifier headers are still raw-file IDs, not conditions — real
+group-based analysis is blocked on §4.
+
+## 12. Differential expression: empirical Bayes + Benjamini-Hochberg FDR
+
+The paper's actual significance test (§5) — empirical Bayes-moderated
+t-test with BH-FDR correction — hadn't been implemented yet; everything
+before this was either MaxQuant's own search-level FDR (a different thing,
+see "Deviations") or fold-changes with no significance test at all (§9's
+arbitrary-pair test). Paused the volcano-plot request specifically to build
+this first, since a volcano plot's y-axis depends on it.
+
+`src/R/differential_expression.R` (R + Bioconductor `limma`, installed via
+`BiocManager::install('limma')` — not present by default *(Appendix F1)*):
+
+1. Log2-transforms intensities (MaxQuant's `0` = "not quantified in this
+   sample" → treated as `NA`, not `log2(0)`).
+2. Within-sample median normalization (subtract each sample's own median),
+   matching the paper's normalization step.
+3. `limma::lmFit` + `eBayes` for the moderated t-test, optionally blocking
+   on a donor/pairing variable via `duplicateCorrelation` (`--donor=`) —
+   matching the paper's donor-blocked linear model, supported but unused
+   for now since real donor assignments aren't available (§4).
+4. `topTable(..., adjust.method = "BH")` for Benjamini-Hochberg FDR.
+
+Takes a generic `<matrix.csv> <group_labels> <out.csv>` interface (group
+labels are a comma-separated vector, one per sample column, so it isn't
+tied to any particular comparison) *(Appendix F2)*. Tested — same spirit
+as §9's arbitrary pairing — with an even 8-vs-8 split of the 16 samples in
+list order (no biological meaning, no donor blocking): 1,477 proteins
+tested, 17 with FDR < 0.05. Ready to rerun with real group (and donor) labels once §4 is
+resolved; also ready to feed directly into a volcano plot (`logFC` +
+`FDR` columns) once that's picked back up.

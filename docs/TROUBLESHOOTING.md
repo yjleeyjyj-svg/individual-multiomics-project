@@ -147,3 +147,34 @@ for the process itself), grouped by area. Referenced from there by ID.
   matching the per-file scratch directories by the lab's raw-file naming
   convention); confirmed the directory hash matched the original clean
   state and that GCS already had the correct content (no re-push needed).
+- **E3 — DVC cache objects are read-only.** Manually deleting specific
+  cache objects (E2's approach, applied to `RawData` in §10 to free local
+  disk without losing remote-tracked data) failed with `PermissionError:
+  [WinError 5]` on some files. DVC marks its cache objects read-only by
+  design (to stop accidental in-place edits); fixed by clearing the
+  read-only attribute (`os.chmod(path, stat.S_IWRITE)`) immediately before
+  each `os.remove()`.
+
+## F. R / statistics
+
+- **F1 — R installed but not on `PATH`; `limma` not installed.** R 4.3.2
+  was already installed (`C:\Program Files\R\R-4.3.2\`) but `Rscript` wasn't
+  resolvable via `Get-Command` — same class of issue as the .NET/dotnet
+  `PATH` problem (Appendix C1), fixed the same way: call `Rscript.exe` by
+  its full path rather than relying on `PATH`. Bioconductor's `limma`
+  (needed for the empirical Bayes-moderated t-test — the paper's actual
+  significance test, §12) isn't part of base R; installed via
+  `BiocManager::install('limma')` (pulls in `statmod` as a dependency).
+- **F2 — bash's `$GROUPS` is a reserved special variable.** A script
+  invocation used a shell variable named `GROUPS` to hold a comma-separated
+  sample-group label string (e.g. `"A,A,A,A,B,B,B,B"`) to pass to the R
+  script. Silently wrong: bash has a built-in special variable `GROUPS`
+  (the list of Unix groups the current user belongs to), so `"$GROUPS"`
+  expanded to that instead of the intended assignment — the R script
+  received a single numeric group ID (`"197609"`, the same GID visible in
+  every `ls -la` listing all session) instead of 16 comma-separated labels,
+  and failed with a confusing "group has 1 entries" error. Renaming the
+  shell variable (`SAMPLE_GROUPS`) fixed it immediately. General lesson:
+  avoid all-caps shell variable names here without first checking they
+  don't collide with a bash built-in (`UID`, `PPID`, `GROUPS`, `BASH*`,
+  `HOST*`, ... are all reserved/special).
