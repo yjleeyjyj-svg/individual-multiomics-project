@@ -341,3 +341,20 @@ list order (no biological meaning, no donor blocking): 1,477 proteins
 tested, 17 with FDR < 0.05. Ready to rerun with real group (and donor) labels once §4 is
 resolved; also ready to feed directly into a volcano plot (`logFC` +
 `FDR` columns) once that's picked back up.
+
+## 13. Volcano plot
+
+`src/R/volcano_plot.R` (Bioconductor `EnhancedVolcano`, built on ggplot2 —
+the de facto standard for proteomics/genomics volcano plots) reads §12's
+output directly (`logFC` + `FDR` columns) and writes a labeled PNG, with
+configurable fold-change/FDR cutoffs (`--fc=`, `--fdr=`, default
+`|log2FC| >= 1`, `FDR < 0.05`) and a `--title=` so mechanical-test runs can
+be marked clearly.
+
+Run against §12's arbitrary-8v8-split test output:
+`results/PXD025280_20260816/volcano_test_arbitrary_groups.png` — 8 up /
+3 down at the default cutoffs, title explicitly says "MECHANICAL TEST".
+Same caveat as everywhere else this arbitrary split shows up: not a real
+comparison, just confirms the whole logFC/FDR -> plot path works end to
+end. Ready to regenerate for the real EP-vs-LP / heat-shock comparisons
+once §4 is resolved.
