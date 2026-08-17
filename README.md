@@ -4,8 +4,19 @@ Mass spectrometry data acquisition, fold-change analysis, and validation pipelin
 built around a public proteomics dataset re-processed with an open-source tool
 chain and checked against the source paper's reported results.
 
-- **[docs/PIPELINE.md](docs/PIPELINE.md)** — the process, step by step
+- **[docs/RUNBOOK.md](docs/RUNBOOK.md)** — every command to reproduce this from scratch, in order (start here to actually run something)
+- **[docs/PIPELINE.md](docs/PIPELINE.md)** — the process and why each decision was made, step by step
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — problems hit and how they were fixed, cross-referenced from the pipeline doc
+
+## Quick start
+
+```bash
+./run_pipeline.sh PXD025280_20260816                          # exports + Reactome ORA (no group labels needed)
+./run_pipeline.sh PXD025280_20260816 <sample_groups> [donor]   # + differential expression, volcano, Reactome expression mode
+```
+
+Assumes MaxQuant has already been run (docs/RUNBOOK.md Stage 2) and its
+output exists at `MaxQuantSearch/<dataset>/output/` (or `dvc pull` it).
 
 ## Reference paper
 
