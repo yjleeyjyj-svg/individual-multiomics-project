@@ -560,3 +560,45 @@ the fact that the other 4 comparisons' values fell out with exact internal
 consistency is reassuring but doesn't fully remove that concern. Not
 assigning EP/LP/treatment labels in `metadata/PXD025280_20260816_sample_mapping.csv`
 based on this alone.
+
+## 18. Exhausted the public-metadata search for sample identity (§4)
+
+One more systematic pass, checking every specific source the user named:
+
+- **PRIDE file-level metadata**, re-checked for all four PXDs (not just
+  PXD025280): empty everywhere, confirmed.
+- **Companion PXD025305** (heat shock + HSPA1A inhibitor): shares the same
+  `JS_JL_NN` numbering scheme and fills exactly the gaps PXD025280 leaves
+  (05-12, 17-24, 29-36, 41-48) -- but in blocks of **8**, not 4. Since this
+  study adds an inhibitor axis (roughly doubling condition count per
+  donor), a doubled block size is exactly what "one block = one donor's
+  full condition set" would predict -- independent structural
+  corroboration of the §15/§16 donor-block hypothesis, from a dataset we'd
+  never actually looked at before. No donor codes or other identity
+  metadata in it, though.
+- **PXD027056, PXD025329**: entirely different naming schemes
+  (`SwiftJ_AppletonE_NN`, `SwiftJ_LlewellynJ_NN`), no overlap with the
+  `JS_JL` numbering, no donor codes.
+- **ArrayExpress E-MTAB-10415** (the companion RNA-seq study) has a proper
+  SDRF with real donor codes (**TH223, TH270, TH296, TH305, WH176**),
+  passage, and stimulus per sample -- genuinely rich metadata, unlike
+  anything on the proteomics side. But its `Date of Experiment` is
+  **2020-12-15**, while the proteomics raw files are dated **2017**
+  (`20170706_...` etc.) -- three years apart. The RNA-seq samples are
+  "donor-matched" to the proteomics donors per the study description, but
+  from an independently-run experiment, not the same cell harvest, with
+  its own unrelated `JL1`-`JL20` numbering. No basis for mapping specific
+  proteomics raw files to specific RNA-seq samples (or their donor codes)
+  from this.
+- **Mascot XML (`F017631.xml`)**, full tag inventory this time (not just a
+  spot check): confirmed the schema has no field capable of carrying
+  sample/condition/donor information at all -- only header-level search
+  parameters and per-peptide identification data.
+
+**Conclusion:** every publicly-accessible metadata source has now been
+checked. No further automated/public-data path is likely to resolve §4.
+The only remaining route to ground truth is contacting the corresponding
+authors directly (Joe Swift, joe.swift@manchester.ac.uk; or Jack Llewellyn,
+jdmllewellyn@gmail.com — both listed under their own names in the SI
+Appendix / ArrayExpress metadata). Not pursued yet; left for a future
+session.
