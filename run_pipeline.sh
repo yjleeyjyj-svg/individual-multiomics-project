@@ -58,17 +58,20 @@ if [ ! -f "$MQ_OUTPUT/proteinGroups.txt" ]; then
   exit 1
 fi
 
-echo "=== [1/5] Peptide intensity export ==="
+echo "=== [1/6] Peptide intensity export ==="
 python src/python/export_peptide_intensities.py "$MQ_OUTPUT/peptides.txt" "$PROCESSED"
 
-echo "=== [2/5] Downstream export (R matrix + Reactome protein list) ==="
+echo "=== [2/6] Downstream export (R matrix + Reactome protein list) ==="
 python src/python/export_for_downstream.py "$MQ_OUTPUT/proteinGroups.txt" "$RESULTS"
+
+echo "=== [3/6] PCA (sample clustering; no condition labels needed) ==="
+"$RSCRIPT" src/R/pca_plot.R "$RESULTS/protein_lfq_matrix.csv" "$RESULTS"
 
 if [ -z "$SAMPLE_GROUPS" ]; then
   echo ""
   echo "No sample_groups given -- skipping differential expression / volcano plot."
   echo "Running Reactome in plain-list (ORA) mode only."
-  echo "=== [3/5] Reactome pathway analysis (ORA) ==="
+  echo "=== [4/6] Reactome pathway analysis (ORA) ==="
   "$RSCRIPT" src/R/reactome_analysis.R "$RESULTS/reactome_protein_list.txt" "$RESULTS"
   echo ""
   echo "Done. To run differential expression + volcano + expression-mode Reactome,"
@@ -82,20 +85,20 @@ if [ -n "$DONOR_LABELS" ]; then
   DONOR_FLAG=(--donor="$DONOR_LABELS")
 fi
 
-echo "=== [3/5] Differential expression (limma: empirical Bayes + BH-FDR) ==="
+echo "=== [4/6] Differential expression (limma: empirical Bayes + BH-FDR) ==="
 "$RSCRIPT" src/R/differential_expression.R \
   "$RESULTS/protein_lfq_matrix.csv" \
   "$SAMPLE_GROUPS" \
   "$PROCESSED/de_results.csv" \
   "${DONOR_FLAG[@]}"
 
-echo "=== [4/5] Volcano plot ==="
+echo "=== [5/6] Volcano plot ==="
 "$RSCRIPT" src/R/volcano_plot.R \
   "$PROCESSED/de_results.csv" \
   "$RESULTS/volcano.png" \
   --title="$DATASET"
 
-echo "=== [5/5] Reactome pathway analysis (expression mode) ==="
+echo "=== [6/6] Reactome pathway analysis (expression mode) ==="
 "$RSCRIPT" src/R/reactome_analysis.R \
   "$PROCESSED/de_results.csv" \
   "$RESULTS" \

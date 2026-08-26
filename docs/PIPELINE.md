@@ -397,3 +397,41 @@ experiment successfully identified and quantified (ribosomal proteins are
 abundant and easy to detect in any shotgun proteomics run), not yet a
 differential/senescence-specific signal. That comparison is what the
 expression-mode submission, once §4 is resolved, is for.
+
+## 15. PCA (sample clustering, no condition labels needed)
+
+Idea from the user picking the project back up: since §4's sample_mapping
+gap still blocks real condition-based comparisons, PCA on the protein LFQ
+matrix can surface natural clustering structure directly from the data —
+independent of knowing which raw file is which condition — as a lead for
+inferring or sanity-checking condition labels later.
+
+`src/R/pca_plot.R`: log2-transforms `protein_lfq_matrix.csv` (0 -> NA, same
+convention as §12), keeps only **complete-case proteins** (detected in all
+16 samples — no imputation, so the component structure isn't an artifact of
+how missing values were filled in: 1,241 of 1,477 survived this run), then
+`prcomp(center=TRUE, scale.=TRUE)`. Points are labelled by raw-file ID and
+coloured by the acquisition-date prefix parsed from the filename (`06`,
+`19`, `24`) — an objectively known covariate (which day a sample was run),
+included specifically to help tell "this is a batch effect" apart from
+"this might be biological," not as a condition guess itself. Outputs:
+`pca_scores.csv` (first 5 PCs), `pca_scree.png` (variance explained),
+`pca_pc1_pc2.png`.
+
+**Observation from the real run** (not yet confirmed against any ground
+truth): PC2 splits the "06" batch cleanly into two groups of 4
+(`06_JS_JL_01/02/03/04` vs `06_JS_JL_13/14/15/16`) *despite* being the same
+acquisition date — since a same-day batch effect wouldn't be expected to
+produce this split, it's a candidate for a real biological grouping rather
+than a technical one. This lines up with the raw-file numbering pattern
+noted back in §4 (16 files falling into four groups of four: `01-04`,
+`13-16`, `25-28`, `37-40`), consistent with the inferred 4-donor x
+2-passage x 2-treatment design. PC1 is dominated by `24_JS_JL_39` and
+`24_JS_JL_40` sitting far from every other sample — the same two files that
+`summary.txt` (§6) already flagged as having unusually low MS/MS
+identification counts, so this may be a technical/quality outlier rather
+than a condition effect. None of this is confirmed; it's a lead for §4, not
+a resolution of it.
+
+Added to `run_pipeline.sh` as stage 3/6, unconditionally (doesn't need
+`sample_groups`).
