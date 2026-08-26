@@ -94,7 +94,7 @@
    <isotopeCalc>False</isotopeCalc>
    <minPeptideLength>7</minPeptideLength>
    <psmFdrCrosslink>0.01</psmFdrCrosslink>
-   <peptideFdr>0.01</peptideFdr>
+   <peptideFdr>0.2</peptideFdr>
    <proteinFdr>0.01</proteinFdr>
    <siteFdr>0.01</siteFdr>
    <minPeptideLengthForUnspecificSearch>8</minPeptideLengthForUnspecificSearch>

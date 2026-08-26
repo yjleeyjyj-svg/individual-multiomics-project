@@ -7,8 +7,13 @@
 # proteomics/genomics volcano plots (gene/protein labels, configurable
 # fold-change and significance cutoffs, built on ggplot2).
 #
+# Default thresholds match the paper's own criterion (SI Appendix Fig. 1
+# legend: "red and blue points satisfy P < 0.05" -- FDR-corrected P-value
+# alone, no log2FC magnitude gate). --fc defaults to 0 accordingly; pass
+# --fc=1 (or any value) for a stricter, non-paper-matching view.
+#
 # Usage:
-#   Rscript volcano_plot.R <de_results.csv> <out.png> [--fc=1] [--fdr=0.05] [--title="..."]
+#   Rscript volcano_plot.R <de_results.csv> <out.png> [--fc=0] [--fdr=0.05] [--title="..."]
 
 suppressMessages(library(EnhancedVolcano))
 
@@ -17,7 +22,7 @@ positional <- args[!grepl("^--", args)]
 flags <- args[grepl("^--", args)]
 
 if (length(positional) < 2) {
-  stop("Usage: Rscript volcano_plot.R <de_results.csv> <out.png> [--fc=1] [--fdr=0.05] [--title=...]")
+  stop("Usage: Rscript volcano_plot.R <de_results.csv> <out.png> [--fc=0] [--fdr=0.05] [--title=...]")
 }
 input_path <- positional[1]
 out_path <- positional[2]
@@ -26,7 +31,7 @@ get_flag <- function(name, default) {
   m <- flags[grepl(paste0("^--", name, "="), flags)]
   if (length(m) > 0) sub(paste0("^--", name, "="), "", m[1]) else default
 }
-fc_cutoff <- as.numeric(get_flag("fc", "1"))
+fc_cutoff <- as.numeric(get_flag("fc", "0"))
 fdr_cutoff <- as.numeric(get_flag("fdr", "0.05"))
 plot_title <- get_flag("title", basename(input_path))
 

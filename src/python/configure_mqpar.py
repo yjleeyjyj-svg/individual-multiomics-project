@@ -18,11 +18,22 @@ MaxQuant defaults that don't fit:
    pipe), which the default UniProt-style identifierParseRule doesn't
    match. Without this fix MaxQuant fails at the "Testing fasta files" step.
 
+Optionally also patches peptideFdr (--peptide-fdr): MaxQuant's own default
+is a 1% target-decoy FDR for peptide identification, applied at the search
+stage -- a different mechanism entirely from the paper's peptide-inclusion
+filter (Mascot-score Benjamini-Hochberg FDR < 0.2, much more permissive).
+The two aren't directly interchangeable (different scoring, different FDR
+estimation), but setting --peptide-fdr=0.2 loosens MaxQuant's own filter to
+the same *numeric* permissiveness the paper used, letting more peptides
+through to quantification. Left at MaxQuant's default (0.01) unless passed.
+
 Safe to re-run: each edit is skipped if already applied.
 """
 
 import argparse
+import re
 from pathlib import Path
+from typing import Optional
 
 ENZYME_MODS_OLD = """         <enzymes>
             <string>Trypsin/P</string>
@@ -55,7 +66,7 @@ CONTAMINANTS_RULE_OLD = r"<identifierParseRule>>[^|]*\|(.*?)\|</identifierParseR
 CONTAMINANTS_RULE_NEW = "<identifierParseRule>>([^ ]*)</identifierParseRule>"
 
 
-def configure_mqpar(mqpar_path: Path, output_folder: str, contaminants_fasta: str) -> None:
+def configure_mqpar(mqpar_path: Path, output_folder: str, contaminants_fasta: str, peptide_fdr: Optional[float] = None) -> None:
     content = mqpar_path.read_text()
 
     if ENZYME_MODS_NEW not in content:
@@ -75,6 +86,9 @@ def configure_mqpar(mqpar_path: Path, output_folder: str, contaminants_fasta: st
         assert contaminants_block_old in content, "contaminants.fasta fastaFileInfo block not found as expected"
         content = content.replace(contaminants_block_old, contaminants_block_new)
 
+    if peptide_fdr is not None:
+        content = re.sub(r"<peptideFdr>[^<]*</peptideFdr>", f"<peptideFdr>{peptide_fdr}</peptideFdr>", content)
+
     mqpar_path.write_text(content)
 
 
@@ -83,7 +97,8 @@ if __name__ == "__main__":
     parser.add_argument("mqpar", type=Path, help="Path to the mqpar.xml to edit in place")
     parser.add_argument("--output-folder", required=True, help="Value for customTxtFolder (keep it outside the raw data folder)")
     parser.add_argument("--contaminants-fasta", required=True, help="Path to MaxQuant's bundled contaminants.fasta as it appears in mqpar.xml")
+    parser.add_argument("--peptide-fdr", type=float, default=None, help="Override peptideFdr (MaxQuant default: 0.01). Pass 0.2 to match the numeric permissiveness of the paper's peptide-inclusion filter.")
     args = parser.parse_args()
 
-    configure_mqpar(args.mqpar, args.output_folder, args.contaminants_fasta)
+    configure_mqpar(args.mqpar, args.output_folder, args.contaminants_fasta, args.peptide_fdr)
     print(f"Configured {args.mqpar}")
