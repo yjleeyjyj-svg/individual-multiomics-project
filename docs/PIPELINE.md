@@ -475,3 +475,88 @@ Outputs: `results/PXD025280_20260816/pairwise/<groupAvB>/` (subset matrix,
 `de_results.csv`, `volcano.png`, `reactome_pathways.csv` +
 `reactome_token.json` each), plus `pairwise/summary.csv` collecting the hit
 counts above.
+
+## 17. Testing the donor-group hypothesis against Figure 1
+
+The user supplied the source paper's Figure 1 again and asked whether it
+could help assign Group1-4 (§15/§16) to EP/LP x control/heat-shock. Read
+the exact numbers behind Fig. 1's four panels from the main text:
+
+| Panel | Comparison | Significant proteins (of 1,830) |
+|---|---|---|
+| 1A | EP vs LP, no heat shock | **806** (286 up / 520 down) |
+| 1B | EP, ± heat shock | 86 (46 up / 40 down) |
+| 1C | LP, ± heat shock | 59 (26 up / 33 down) — smallest ("blunted response") |
+| 1D | EP vs LP, both heat-shocked | not given exactly, but described as "again" broadly different, ~comparable to 1A |
+
+**Topology check (against "each Group = one of the 4 conditions"):** the
+paper's structure implies exactly two *small* comparisons (EPc-EPh,
+LPc-LPh) that should NOT share a condition in common. Our two smallest
+pairwise results (Group3v4=3, Group2v4=6) *do* share a common group
+(Group4) — this doesn't fit that structure, so Group1-4 are probably not
+simply "one pure condition each."
+
+**Marker-based checks instead**, run against the real `de_results.csv` for
+each pair (`results/PXD025280_20260816/pairwise/`):
+
+- **HSPA1A** (the paper's central heat-shock marker) isn't in our
+  quantified protein list at all (likely collapsed into a shared
+  peptide group with its near-identical paralog, or below the ≥3-unique-
+  peptide threshold). Its paralog **HSPA1B** is present but not
+  significant in *any* of the 6 comparisons (FDR > 0.34 throughout) —
+  no comparison shows the strong, clean heat-shock signal you'd expect if
+  it captured control-vs-heat-shock.
+- A different inducible HSP, **HSPA6**, *is* significantly up in Group3
+  vs Group2 specifically (logFC +1.17, FDR 0.025) — a real but modest
+  heat-shock-associated signal embedded in that one comparison.
+- **LMNB1** (lamin B1, a specific senescence marker — lost in senescent
+  cells per the paper) trends higher in Group3 than Group2 (logFC +0.84,
+  not significant, FDR 0.20) — direction consistent with Group3 being
+  less senescent, but not itself conclusive.
+- **Reactome, Group2 vs Group3** (the largest of the 6 comparisons, 274
+  hits): "Cell Cycle" (FDR as low as 2.3e-10), "DNA Replication" (FDR
+  2.7e-6), and "Translation" (multiple sub-pathways, FDR down to 3.6e-15)
+  are all significantly enriched — the *exact three* pathway categories
+  the paper reports for its own EP-vs-LP passage comparison (§5). This is
+  a specific, multi-category match that's hard to attribute to chance.
+- **Direction check:** all 9 significant EIF (translation initiation)
+  genes and the mean of 29 significant ribosomal proteins in Group2-vs-
+  Group3 point the same way — **higher in Group3, lower in Group2**.
+  Given the paper's central finding is *reduced translational capacity in
+  senescent (LP) cells*, this points to **Group3 ~ EP-like, Group2 ~
+  LP-like** specifically (not the reverse).
+
+**Extending the axis to all 4 groups:** took the 38 genes (EIF + ribosomal
+protein) significant in Group2-vs-Group3, and computed their mean logFC
+across all 6 pairwise comparisons. The values are perfectly internally
+consistent (each of group1v3, group1v4, group3v4's actual mean matches
+exactly what you'd predict by simple subtraction from the other three,
+confirming this behaves as one coherent linear score, not noise):
+
+```
+Group4 (-0.20)  <  Group2 (0, reference)  <  Group1 (+0.98)  <  Group3 (+1.24)
+     more "LP-like" (low translation) --------------------- more "EP-like" (high translation)
+```
+
+**A real apparent contradiction, resolved:** Group3-vs-Group4 has the
+*largest* gap on this translation axis (1.44) but the *fewest*
+whole-proteome significant hits of all 6 comparisons (3). Checked
+directly: in that comparison, the 87 EIF/ribosomal genes tested all trend
+the expected direction (mean logFC -0.89) but only 1 of 87 individually
+clears FDR < 0.05 — i.e. the trend looks real but this specific 4-vs-4
+slice is underpowered/noisy, not that there's no difference. This means a
+comparison's raw significant-hit *count* conflates real biological
+distance with how internally homogeneous each side happens to be — it
+isn't a clean distance metric on its own.
+
+**Conclusion (tentative, not a resolution of §4):** Group3 is most
+plausibly EP-associated and Group4 most plausibly LP-associated (the two
+extremes, better supported). Group1 and Group2 sit in between and their
+relative EP/LP-ness is much less certain — they may instead be splitting
+on treatment (control vs heat-shock) rather than passage. Caveat: the
+38-gene signature was selected *from* the Group2-vs-Group3 comparison
+itself, so applying it back to that same comparison is somewhat circular;
+the fact that the other 4 comparisons' values fell out with exact internal
+consistency is reassuring but doesn't fully remove that concern. Not
+assigning EP/LP/treatment labels in `metadata/PXD025280_20260816_sample_mapping.csv`
+based on this alone.
