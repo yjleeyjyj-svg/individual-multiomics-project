@@ -1,0 +1,17 @@
+raw_file,donor_group,passage,treatment,notes
+20170706_JS_JL_01,Group1,,,PCA-inferred donor block (see docs/PIPELINE.md SS15/SS16); passage/treatment not yet assigned
+20170706_JS_JL_02,Group1,,,PCA-inferred donor block
+20170706_JS_JL_03,Group1,,,PCA-inferred donor block
+20170706_JS_JL_04,Group1,,,PCA-inferred donor block
+20170706_JS_JL_13,Group2,,,PCA-inferred donor block
+20170706_JS_JL_14,Group2,,,PCA-inferred donor block
+20170706_JS_JL_15,Group2,,,PCA-inferred donor block
+20170706_JS_JL_16,Group2,,,PCA-inferred donor block
+20170719_JS_JL_25,Group3,,,PCA-inferred donor block (weaker internal PCA support than Group1/2 -- see SS15)
+20170719_JS_JL_26,Group3,,,PCA-inferred donor block
+20170719_JS_JL_27,Group3,,,PCA-inferred donor block
+20170719_JS_JL_28,Group3,,,PCA-inferred donor block
+20170724_JS_JL_37,Group4,,,PCA-inferred donor block (weaker internal PCA support; JL_39/40 are PC1 outliers, possibly technical -- see SS15)
+20170724_JS_JL_38,Group4,,,PCA-inferred donor block
+20170724_JS_JL_39,Group4,,,PCA-inferred donor block; PC1 outlier
+20170724_JS_JL_40,Group4,,,PCA-inferred donor block; PC1 outlier
