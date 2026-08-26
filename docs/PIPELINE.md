@@ -435,3 +435,43 @@ a resolution of it.
 
 Added to `run_pipeline.sh` as stage 3/6, unconditionally (doesn't need
 `sample_groups`).
+
+## 16. Pairwise donor-group comparisons
+
+Picking the project back up, labeled all 16 samples with their §15
+PCA-inferred donor group (`Group1`-`Group4`) in `metadata/PXD025280_20260816_sample_mapping.csv`
+— explicitly *not* assigning EP/LP or control/heat-shock, since that finer
+split within each donor group still isn't known (§4). Relocated
+`sample_mapping.csv` out of the DVC-tracked `RawData/` directory into this
+new git-tracked `metadata/` folder in the process — it was a small,
+frequently-edited file living inside a 16.5 GB DVC unit, so every edit had
+required a full `dvc pull` of the raw data just to touch ~1 KB of text.
+
+Ran all `C(4,2) = 6` pairwise comparisons between the four donor groups
+through the full downstream chain (`run_pairwise_comparisons.sh`, using new
+helper `src/python/subset_samples.py` to carve each 8-sample pair out of
+the 16-sample matrix before feeding it to `differential_expression.R` ->
+`volcano_plot.R` -> `reactome_analysis.R`, expression mode):
+
+| Comparison | FDR < 0.05 | \|log2FC\| >= 1 (up / down) |
+|---|---|---|
+| Group1 vs Group2 | 111 | 20 / 55 |
+| Group1 vs Group3 | 16 | 5 / 7 |
+| Group1 vs Group4 | 30 | 23 / 7 |
+| **Group2 vs Group3** | **274** | **95 / 44** |
+| Group2 vs Group4 | 6 | 6 / 0 |
+| Group3 vs Group4 | 3 | 3 / 0 |
+
+Group2-vs-Group3 stands out by a wide margin, while Group3-vs-Group4 and
+Group2-vs-Group4 show almost no difference — i.e. Group3 and Group4 look
+very similar to each other, and Group2 looks distinct from everything else.
+This is still donor-group vs donor-group, not any biological comparison
+(§4 remains unresolved) — but the asymmetry itself is a real, notable
+pattern worth keeping in mind once passage/treatment labels are available:
+if donor identity alone produced these differences, hit counts across all
+6 pairs would be expected to look more uniform than this.
+
+Outputs: `results/PXD025280_20260816/pairwise/<groupAvB>/` (subset matrix,
+`de_results.csv`, `volcano.png`, `reactome_pathways.csv` +
+`reactome_token.json` each), plus `pairwise/summary.csv` collecting the hit
+counts above.

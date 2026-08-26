@@ -104,6 +104,7 @@ GCS bucket layout (`gs://individual-multiomics-project/`):
 - [x] Volcano plot (`EnhancedVolcano`) from the differential expression output
 - [x] Reactome pathway analysis (REST API, ORA mode) on the real 1,477-protein identified list — 421/1,886 pathways at FDR < 0.05; expression-colored mode implemented and ready
 - [x] PCA of the 16 samples (complete-case proteins, no condition labels needed) — found a same-day batch splitting cleanly into two groups of 4, a lead for §4
+- [x] Samples labeled into 4 PCA-inferred donor groups (`metadata/PXD025280_20260816_sample_mapping.csv`), passage/treatment still blank; all 6 pairwise group comparisons run (DE + volcano + Reactome) — Group2 vs Group3 stands out sharply (274 FDR<0.05 vs single digits for Group3v4/Group2v4)
 - [ ] Validation against the paper's reported summary statistics
 - [ ] Remaining PXD datasets (025305, 027056, 025329) processed on the VM
 - [ ] Sample/condition mapping filled in (pending, needs a source outside this project) — blocks real (non-arbitrary) differential expression and validation
