@@ -333,6 +333,19 @@ this first, since a volcano plot's y-axis depends on it.
    for now since real donor assignments aren't available (§4).
 4. `topTable(..., adjust.method = "BH")` for Benjamini-Hochberg FDR.
 
+**Donor model option (added with §19):** `--donor-model=fixed` swaps
+`duplicateCorrelation` for donor as a fixed term (`~ donor + group`). With
+one sample per donor per condition (§19), this is the classic paired design:
+logFC is exactly the mean of the within-donor differences, and t is a
+moderated paired t. It's also closer to the paper's regression, where donor
+is an explicit model term. The default stays `random`
+(`duplicateCorrelation`) so earlier runs reproduce unchanged. The fixed
+option refuses to run if any donor appears in only one group, since the
+donor term would then absorb the group effect. Synthetic check (EP vs LP
+controls, 4 donors, 1,500 proteins): unpaired 15 hits, `random` 330,
+`fixed` 290 at FDR < 0.05; fixed-model logFC matched the mean within-donor
+difference to 1e-14.
+
 Takes a generic `<matrix.csv> <group_labels> <out.csv>` interface (group
 labels are a comma-separated vector, one per sample column, so it isn't
 tied to any particular comparison) *(Appendix F2)*. Tested — same spirit

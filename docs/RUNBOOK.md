@@ -336,7 +336,7 @@ gcloud compute instances delete individual-multiomics-project \
 ## Stage 3 — Downstream pipeline (one command)
 
 ```bash
-./run_pipeline.sh <dataset> [sample_groups] [donor_labels]
+./run_pipeline.sh <dataset> [sample_groups] [donor_labels] [donor_model]
 ```
 
 ```bash
@@ -345,6 +345,9 @@ gcloud compute instances delete individual-multiomics-project \
 
 # Full pipeline once sample_mapping.csv (docs/PIPELINE.md §4) is filled in:
 ./run_pipeline.sh PXD025280_20260816 EP,EP,LP,LP,EP,EP,LP,LP,EP,EP,LP,LP,EP,EP,LP,LP 1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4
+
+# Same, with donor as a fixed term (~ donor + group, paired design; §12):
+./run_pipeline.sh PXD025280_20260816 <sample_groups> <donor_labels> fixed
 ```
 
 This runs, in order: `export_peptide_intensities.py` →

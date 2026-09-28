@@ -6,7 +6,7 @@
 # docs/RUNBOOK.md "Stage 2") and MaxQuantSearch/<dataset>/output/ exists.
 #
 # Usage:
-#   ./run_pipeline.sh <dataset> [sample_groups] [donor_labels]
+#   ./run_pipeline.sh <dataset> [sample_groups] [donor_labels] [donor_model]
 #
 #   dataset       Folder name under RawData/ and MaxQuantSearch/, e.g.
 #                 PXD025280_20260816. Defaults to PXD025280_20260816.
@@ -17,12 +17,16 @@
 #                 expression-mode-Reactome steps -- omit to run only the
 #                 export steps + a plain-list (ORA) Reactome run.
 #   donor_labels  Optional comma-separated donor/blocking label per sample
-#                 column, same order, for limma's duplicateCorrelation.
+#                 column, same order.
+#   donor_model   How to block on donor_labels: "random" (default, limma
+#                 duplicateCorrelation) or "fixed" (~ donor + group, the
+#                 paired design -- see differential_expression.R header).
 #
 # Examples:
 #   ./run_pipeline.sh                                    # exports + ORA only
 #   ./run_pipeline.sh PXD025280_20260816 A,A,A,A,A,A,A,A,B,B,B,B,B,B,B,B
 #   ./run_pipeline.sh PXD025280_20260816 EP,EP,LP,LP,... 1,2,1,2,...
+#   ./run_pipeline.sh PXD025280_20260816 EP,EP,LP,LP,... 1,2,1,2,... fixed
 #
 # NOTE on variable naming (see docs/TROUBLESHOOTING.md Appendix F2): never
 # name a shell variable GROUPS -- it's a bash built-in (list of Unix groups
@@ -33,6 +37,7 @@ set -euo pipefail
 DATASET="${1:-PXD025280_20260816}"
 SAMPLE_GROUPS="${2:-}"
 DONOR_LABELS="${3:-}"
+DONOR_MODEL="${4:-}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_ROOT"
@@ -83,6 +88,9 @@ fi
 DONOR_FLAG=()
 if [ -n "$DONOR_LABELS" ]; then
   DONOR_FLAG=(--donor="$DONOR_LABELS")
+  if [ -n "$DONOR_MODEL" ]; then
+    DONOR_FLAG+=(--donor-model="$DONOR_MODEL")
+  fi
 fi
 
 echo "=== [4/6] Differential expression (limma: empirical Bayes + BH-FDR) ==="
