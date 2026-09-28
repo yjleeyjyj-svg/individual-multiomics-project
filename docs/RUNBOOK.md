@@ -352,6 +352,22 @@ This runs, in order: `export_peptide_intensities.py` →
 `volcano_plot.R` → `reactome_analysis.R`. See the script's header comment
 or `docs/PIPELINE.md §§9–14` for what each stage does.
 
+### 3.1 Infer EP/LP × ctrl/HS within each donor block (§19)
+
+Not part of `run_pipeline.sh` — writes a *candidate* mapping for review,
+never touches `metadata/`:
+
+```bash
+Rscript src/R/within_donor_pca.R \
+  results/PXD025280_20260816/protein_lfq_matrix.csv \
+  metadata/PXD025280_20260816_sample_mapping.csv \
+  results/PXD025280_20260816/within_donor
+```
+
+Read `passage_split_search.csv` (best vs runner-up gap) and
+`fig1_validation.csv` before trusting `inferred_sample_mapping.csv`
+(interpretation guide: `docs/PIPELINE.md §19`).
+
 ---
 
 ## Stage 4 — DVC / git housekeeping pattern

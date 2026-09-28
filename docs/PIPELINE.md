@@ -602,3 +602,87 @@ authors directly (Joe Swift, joe.swift@manchester.ac.uk; or Jack Llewellyn,
 jdmllewellyn@gmail.com — both listed under their own names in the SI
 Appendix / ArrayExpress metadata). Not pursued yet; left for a future
 session.
+
+## 19. What the paper itself defines about sample grouping
+
+Asked directly: how does the reference paper assign raw files to patient
+(donor) / condition groups? Re-read the main text and figure legends (PMC
+full text, PMC10083568) specifically for this. The SI Appendix couldn't be
+re-read this session (PNAS/EBI/bioRxiv blocked by the session's network
+policy), so its content here comes from §5's earlier extraction.
+
+**Answer: it doesn't.** No per-raw-file assignment is published anywhere in
+the paper. It lived only in the authors' Progenesis QI experiment design and
+MATLAB input, consistent with §4/§18. What the paper *does* pin down is
+the design that any assignment has to satisfy:
+
+| Item | What the paper says | Consequence for us |
+|---|---|---|
+| Conditions | EP / LP × control (37 °C) / 2 h at 42 °C | 16 files = 4 donors × 4 conditions |
+| Replication | "n = 4 primary donors"; "the four EP prestress biological replicates" | exactly 1 sample per donor per condition, no technical replicates |
+| Pairing | every comparison is "donor-matched" | the analysis unit is a (donor, condition) pair, so both labels are needed |
+| Passage | EP = passages 1–7, LP = onset of senescence at passages 5–18 | passage number varies by donor, so it can't be used to decode files |
+| Heat-shock timing | proteomics compares cells right after the 2 h 42 °C treatment against matched controls | the "24 h recovery" wording applies only to the IF / RT-qPCR time courses, not the MS samples |
+| Statistics | linear regression modelling donor variability at peptide and protein level + empirical Bayes + BH (§5). This lab's own method paper (BayesENproteomics, Mallikarjun et al., J Proteome Res 2020, doi:10.1021/acs.jproteome.9b00468) gives the model as `y = β0 + peptide + group + donor + peptide×group + peptide×donor` | donor is an explicit model term |
+| Ground truth | Fig. 1A LP vs EP ctrl: 806 / 1,830 (286 up / 520 down); 1B EP ±HS: 86 (46 / 40); 1C LP ±HS: 59 (26 / 33) | validation targets for any inferred labelling |
+
+**Implications for the existing Group1–4 work:**
+
+- The donor-block reading of Group1–4 (§15/§16) is well supported: with
+  PXD025305's 8-per-block files (§18), the run numbers 01–12, 13–24,
+  25–36 and 37–48 each hold exactly 4 PXD025280 + 8 PXD025305 files. That's
+  one donor's full sample set per 12-number block.
+- That undercuts §17's reading. If each Group is one donor's 2×2 set, every
+  Group contains *both* EP and LP, so Group-vs-Group differences
+  (§16) are donor-vs-donor differences. "Group3 EP-like / Group4 LP-like" is
+  therefore not evidence about passage. What remains unknown is only the
+  2×2 arrangement *inside* each block.
+
+**New script: `src/R/within_donor_pca.R`** (RUNBOOK §3.1). Because the paper's
+EP/LP effect is large (~44 % of proteins), it should be recoverable once the
+donor effect is removed:
+
+1. Same preprocessing as `differential_expression.R` (log2, 0 → NA,
+   per-sample median subtraction), complete-case proteins only. Each
+   protein is then centred on its own donor mean, and PCA is run on the
+   residual (within-donor) variation.
+2. **Passage search:** all 648 ways to split every donor 2-vs-2 (donor 1's
+   orientation fixed), each scored by limma `~ donor + split` as the number of
+   proteins at BH-FDR < 0.05. LP = the side with lower LMNB1.
+3. **Heat-shock search:** given the best passage split, all 128 ctrl/HS
+   assignments within each EP pair and LP pair, scored by limma
+   `~ donor + passage + hs`. HS = the side with higher mean inducible HSP
+   (HSPA1A/HSPA1B/HSPA6/DNAJB1/HSPH1, whichever are quantified).
+4. **Validation:** re-runs Fig. 1A–C as donor-blocked comparisons with the
+   inferred labels and reports hit fractions next to the paper's.
+5. Writes `inferred_sample_mapping.csv` to the output folder, **not** to
+   `metadata/`. It's a candidate for review.
+
+**Tested on synthetic data only** (the real LFQ matrix is DVC-tracked and
+wasn't available in the session that wrote this):
+
+- *Planted* effects (1,500 proteins; donor effect SD 0.6; passage effect in
+  45 % of proteins, SD 0.8; heat-shock effect in 6 %, SD 0.8; noise SD 0.35;
+  3 % missing values): all 16 labels recovered exactly. Passage search best
+  = 253 hits vs runner-up 151; heat-shock best = 26 vs 18.
+- *Null* (same, but no passage or heat-shock effect): best 3 vs runner-up 2
+  for passage and 2 vs 1 for heat shock. Every PC still split every donor
+  2/2, so that per-PC check is **necessary but not sufficient** on its own.
+
+**How to read a real run:**
+
+- The best passage split's score should stand clearly above the runner-up
+  (not 3 vs 2), and the within-donor PC1 should carry a clearly larger
+  variance share than PC2.
+- LMNB1 must be quantified for the EP/LP orientation to mean anything. The
+  inferred LP side should also show lower translation / ribosomal proteins
+  (§17's signature), which is an independent check.
+- `fig1_validation.csv`: the 1A fraction should be large (paper: 0.44) and
+  1B/1C small (0.047 / 0.032), with LP ±HS < EP ±HS.
+- The heat-shock stage is the weak link. It's a small effect at protein
+  level after only 2 h, and HSPA1A isn't in our quantified list (§17). A
+  small best-vs-runner-up gap there means the ctrl/HS labels are a guess
+  even if the passage labels are solid.
+- Even a clean result is still an inference. Confirmation still needs the
+  authors (§18). Labels should go into `metadata/` only with a note saying
+  they're inferred.
